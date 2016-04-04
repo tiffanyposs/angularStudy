@@ -11,12 +11,46 @@
   <md-toolbar>
     <div class="md-toolbar-tools">
       <p><strong>ngClassifieds</strong></p>
+
       <md-button ng-click="openSidebar()">
         <md-icon class="mdi mdi-plus-circle"></md-icon>
           New Classifieds
       </md-button>
+
+      <md-button ng-click="showFilters = true">
+        <md-icon class="mdi mdi-magnify"></md-icon>
+          Filters
+      </md-button>
+
     </div>
   </md-toolbar>
+
+  <md-button ui-sref="stateone">Go to state one</md-button>
+  <md-button ui-sref="statetwo">Go to state two</md-button>
+  <ui-view></ui-view>
+
+  <div class="filters" layout="row" layout-align="center center" ng-show="showFilters">
+
+    <md-input-container>
+      <label>Enter Search Term</label>
+      <input type="text" ng-model="classifiedsFilter">
+    </md-input-container>
+
+    <md-input-container>
+      <label>Category</label>
+      <md-select ng-model="category">
+        <md-option ng-repeat="category in categories" value="{{ category }}">{{ category }}</md-option>
+      </md-select>
+    </md-input-container>
+
+    <div layout="row">
+      <md-button class="md-warn" 
+        ng-click="classifiedsFilter = ''; category = ''">
+        Clear
+      </md-button>
+    </div>
+
+  </div>
 
   <md-sidenav class="md-sidnav-left md-whiteframe-z2" 
     md-component-id="left">
@@ -64,7 +98,11 @@
   </md-sidenav>
 
   <md-content class="md-padding" layout="row" layout-wrap>
-    <md-card flex="30" ng-repeat="classified in classifieds">
+    <md-card ng-repeat="classified in classifieds | 
+                        filter: classifiedsFilter |
+                        filter: category" 
+                        flex="30"
+                        class="classified">
       <img ng-src="{{ classified.image }}">
       <md-card-content>
 
@@ -106,7 +144,7 @@
           <h3>Admin</h3>
           <div layout="row">
           	<md-button ng-click="editClassified(classified)" class="md-primary">Edit</md-button>
-          	<md-button class="md-warn">Delete</md-button>
+          	<md-button ng-click="deleteClassified($event, classified)" class="md-warn">Delete</md-button>
           </div>
         </div>
 
@@ -123,5 +161,7 @@
   <script type="text/javascript" src="scripts/app.js"></script>
   <script type="text/javascript" src="components/classifieds.ctr.js"></script>
   <script type="text/javascript" src="components/classifieds.fac.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.6.1/lodash.min.js"></script>
+  <script type="text/javascript" src="node_modules/angular-ui-router/release/angular-ui-router.js"></script>
 </body>
 </html>

@@ -977,4 +977,300 @@ Now you controller looks like this for the new added sections:
 
 ###Deleting
 
-In the `index.html` find the delete button from the 
+In the `index.html` find the delete button from the cards and add a `ng-click` to it with a method of `deleteClassified()`.
+
+
+```
+  <md-button ng-click="deleteClassified(classified)" class="md-warn">Delete</md-button>
+
+```
+
+In the controller add the `deleteClassified` method.
+
+```
+  $scope.deleteClassified = function(classified){
+    var index = $scope.classifieds.indexOf(classified);
+    $scope.classifieds.splice(index, 1)
+  }
+    
+```
+
+
+####Dialog boxes in Angular Material
+
+First you need to inject `$mdDialog` into the controller
+
+`index.html`, add $event as the first param on your delete button. This is an object from `ng-repeat` that you can pass in
+
+```
+  <md-button ng-click="deleteClassified($event, classified)" class="md-warn">Delete</md-button>
+
+```
+
+In the controller, after you have injected `$mdDialog` add the following code:
+
+```
+  $scope.deleteClassified = function(event, classified){
+    	var confirm = $mdDialog.confirm()
+    	  .title("Are you sure you want to delete " + classified.title + "?")
+    	  .ok("Yes")
+    	  .cancel("No Thanks")
+    	  .targetEvent(event);
+    	$mdDialog.show(confirm).then(function(){
+    	  var index = $scope.classifieds.indexOf(classified);
+    	  $scope.classifieds.splice(index, 1);
+    	}, function(){
+    		// if they press cancel
+    	});
+    }
+
+```
+
+* `var confirm = $mdDialog.confirm()` creates a new confirm popup box
+* `.title` creates the body copy/title
+* `.ok` creates the copy for they ok/yes button
+* `.cancel` creates the copy for the cancel button
+* `.targetEvent` gets passed the even object from the view
+* `.show(confirm)` is a promise that creates the popup
+* The first function is what happens if they user presses ok
+* The second function is what happens if the user presses cancel (currently nothing)
+
+
+###Searching or Filtering for Data
+
+In the `index.html` copy the "New Classifieds" button to make another button called filters within the top toolbar
+
+```
+  <md-button ng-click="showFilters = true">
+    <md-icon class="mdi mdi-magnify"></md-icon>
+      Filters
+  </md-button>
+
+```
+
+Also in the `index.html`,  you can add a new div that will contain the filters below the toolbar
+
+```
+ <div class="filters" layout="row" layout-align="center center" ng-show="showFilters">
+    <md-input-container>
+      <label>Enter Search Term</label>
+      <input type="text" ng-model="classifiedsFilter">
+    </md-input-container>
+  </div>
+
+```
+
+* `layout` uses flexbox to make a row
+* `layout-align` centers things
+* `ng-show` is setting if showFilters is true this div shows
+* `md-input-container` is a stylized input box
+* `ng-model` is the the name of the model that you can filter by (see below)
+
+Now also in `index.html` you can add this `clssifiedsFilter` model as a filter to the cards 
+
+```
+  <!-- Change this-->
+  <md-card flex="30" ng-repeat="classified in classifieds">
+  
+  <!-- To This-->
+  <md-card flex="30" ng-repeat="classified in classifieds | filter: classifiedsFilter">
+
+```
+
+* This allows you to filter by classifiedsFilter which is tied to the input box you just created
+* Not only will it filter by displayed data, but it will also filter by the data you arn't displaying
+
+
+####Dropdown List
+
+Below the input box section you made in the last section add
+
+```
+  <md-input-container>
+      <label>Category</label>
+      <md-select ng-model="category">
+        <md-option ng-repeat="category in categories" value="{{ category }}">{{ category }}</md-option>
+      </md-select>
+    </md-input-container>
+
+```
+
+* `md-select` makes a stylized selector dropdown
+* `md-option` are the options in there
+* `ng-repeat` will be an iteration of data we will set up in the controller next
+* `{{ category }}` will set the value and the text to the current category filter from the repeat
+
+#####Lodash
+
+
+Lodash is a javascript library that has a lot of helper functions [lodash](http://www.lodash.com)
+
+Go to [cdnjs.com](http://www.cdnjs.com) and search for `lodash`, then copy the link and add it to your index.html at the bottom
+
+Once you add that, you will now have access to it in the controller. Lets create a function that will get and reduce all of the categories listed in our categories data
+
+```
+
+  function getCategories(classifieds){
+    var categories = [];
+    angular.forEach(classifieds, function(item){
+      angular.forEach(item.categories, function(category){
+        categories.push(category);
+      });
+    });
+    return _.uniq(categories)
+  }
+    	
+
+```
+
+* `getCategories` loops through the classifieds array and the category arrays found inside of them, then pushes them to a new array. Then the `_.uniq()` method from `lodash` will reduce the array so it has no repeats
+
+
+Then this line must get added to the `classifiedsFactory` inside of it so we know it completes before it gets to the the function (we need classifieds to exist)
+
+```
+  $scope.categories = getCategories($scope.classifieds);
+  
+```
+
+Now our `md-card` needs to look like this
+
+```
+  <md-card ng-repeat="classified in classifieds | 
+                        filter: classifiedsFilter |
+                        filter: category" flex="30">
+```
+
+####Clearing the inputs
+
+To clear the models we just created, we are going to want to add a button below the filters to clear the inputs:
+
+```
+
+  <div layout="row">
+      <md-button class="md-warn" 
+        ng-click="classifiedsFilter = ''; category = ''">
+        Clear
+      </md-button>
+  </div>
+    
+```
+
+* `md-warn` will make it red
+* `ng-click` on click it will set the classifiedsFilter and category models to empty strings, clearing the applied filters
+
+
+###Adding Animation
+
+Angular Animate we already added with our site script tags `ng-enter` `ng-move` and `ng-leave` are three classes that come into play when you filter data.
+
+To the `md-card` for the cards on the page we want to add a class of classified, so it will look like this:
+
+```
+  <md-card ng-repeat="classified in classifieds | 
+                        filter: classifiedsFilter |
+                        filter: category" 
+                        flex="30"
+                        class="classified">
+```
+
+Then in  the `style.css` we are going to create an animation
+
+```
+  .classified.ng-enter, .classified.ng-move{
+	transition: 0.4s all;
+	opacity: 0;
+  }
+
+  .classified.ng-enter.ng-enter-active, .classified.ng-move.ng-move-active{
+	opacity: 1;
+  }
+
+  .classified.ng-leave{
+	animation: 0.4s fade_classified;
+  }
+
+  @keyframes fade_classified{
+	from { opacity: 1; }
+	to { opacity: 0; }
+  }
+  
+```
+
+* When angular removes items it has the `ng-enter` `ng-move` and `ng-leave` like mentioned above, we are tapping into those here to create an animated effect.
+* The top two parts control the fade in
+* The bottom two parts with the keyframe controlls the fade out
+
+
+###Setting up Routes
+
+In a single page app we need to be able to generate links for different parts of the app, event though the page doesn't refresh.
+
+Here we are dealing with routing with a third party called UI Router
+
+To Install:
+
+```
+  $npm install angular-ui-router
+
+```
+
+Then add to `index.html`
+
+```
+  <script type="text/javascript" src="node_modules/angular-ui-router/release/angular-ui-router.js"></script>
+
+```
+
+
+
+In `app.js` we can update the code to look like this:
+
+```
+  angular
+    .module("ngClassifieds", ["ngMaterial", "ui.router"])
+    .config(function($mdThemingProvider, $stateProvider){
+      $mdThemingProvider.theme("default")
+        .primaryPalette('teal')
+        .accentPalette('orange')
+
+    $stateProvider
+      .state("stateone", {
+        url: "/stateone",
+        template: "<h1>State One</h1>"
+      })
+      .state("statetwo", {
+        url: "/statetwo",
+        template: "<h1>State Two</h1>"
+      });
+  });
+
+```
+
+* `ui.router` adds it
+* `$stateProvider` is a config you need to pass in
+* `.state` creates a new state with the first param being the name of the state
+* `url` is the route
+*  `template` is the template
+
+Now you can add this to your `index.html`. Where ever you put this is where your state (it's template) will show up
+
+```
+<ui-view></ui-view>
+
+```
+
+So when we go to [http://localhost:8080/#/stateone](http://localhost:8080/#/stateone)it will show the `<h1>` from that state within the ui-view tag
+
+
+How do we change the url as we navigate around the view. An easy example is adding these buttons:
+
+```
+  <md-button ui-sref="stateone">Go to state one</md-button>
+  <md-button ui-sref="statetwo">Go to state two</md-button>
+
+```
+
+* `ui-sref` links us to a state, here these two buttons will toggle the two states we created above
+*
